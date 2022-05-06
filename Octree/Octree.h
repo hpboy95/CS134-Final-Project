@@ -10,8 +10,8 @@
 //
 #pragma once
 #include "ofMain.h"
-#include "box.h"
-#include "ray.h"
+#include "../Shapes/box.h"
+#include "../Shapes/ray.h"
 
 
 

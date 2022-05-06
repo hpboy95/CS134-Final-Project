@@ -2,9 +2,9 @@
 
 #include "ofMain.h"
 #include "ofxGui.h"
-#include "ofxAssimpModelLoader.h"
-#include "Octree.h"
+#include "Octree/Octree.h"
 #include <glm/gtx/intersect.hpp>
+#include "ParticleSystems/Lander.h"
 
 
 class ofApp : public ofBaseApp{
@@ -38,7 +38,8 @@ class ofApp : public ofBaseApp{
 		glm::vec3 ofApp::getMousePointOnPlane(glm::vec3 p , glm::vec3 n);
 
 		ofEasyCam cam;
-		ofxAssimpModelLoader mars, lander;
+		ofxAssimpModelLoader mars;
+		Lander lander;
 		ofLight light;
 		Box boundingBox, landerBounds;
 		Box testBox;
@@ -69,6 +70,8 @@ class ofApp : public ofBaseApp{
 	
 		ofVec3f selectedPoint;
 		ofVec3f intersectPoint;
+
+		ofImage background;
 
 		vector<Box> bboxList;
 

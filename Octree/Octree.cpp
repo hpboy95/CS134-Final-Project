@@ -48,8 +48,6 @@ Box Octree::meshBounds(const ofMesh & mesh) {
 		if (v.z > max.z) max.z = v.z;
 		else if (v.z < min.z) min.z = v.z;
 	}
-	cout << "vertices: " << n << endl;
-//	cout << "min: " << min << "max: " << max << endl;
 	return Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
 }
 
@@ -277,8 +275,6 @@ bool Octree::intersect(const Box &box, TreeNode & node, vector<Box> & boxListRtn
 
 void Octree::draw(TreeNode & node, int numLevels, int level) {
 	if (level >= numLevels) return;
-	//cout << "level: " << level << endl;
-	//cout << "number of points " << node.points.size() << endl;
 	ofSetColor(colors[level]);
 	drawBox(node.box);
 	level++;
