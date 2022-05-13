@@ -41,7 +41,7 @@ void ofApp::setup(){
 	background.load("assets/jeremy-perkins-uhjiu8FjnsQ-unsplash.jpg");
 
 	//Load in the terrain Model
-	mars.loadModel("geo/mars-low-5x-v2.obj");
+	mars.loadModel("geo/moon-houdini.obj");
 	mars.setScaleNormalization(false);
 
 	// create sliders for testing
@@ -65,7 +65,10 @@ void ofApp::setup(){
 		bboxList.push_back(Octree::meshBounds(lander.model.getMesh(i)));
 	}
 
-	//Setback Ground Image
+	GravityForce *f = new GravityForce(glm::vec3(0, -1.625, 0));
+	f->applyOnce = false;
+
+	lander.addForce(f);
 
 }
  
@@ -73,6 +76,7 @@ void ofApp::setup(){
 // incrementally update scene (animation)
 //
 void ofApp::update() {
+	lander.update();
 }
 //--------------------------------------------------------------
 void ofApp::draw() {
@@ -264,6 +268,8 @@ void ofApp::keyPressed(int key) {
 		break;
 	case OF_KEY_DEL:
 		break;
+	case ' ':
+		lander.addForce(new ComputeUp(glm::vec3(0, 10, 0)));
 	default:
 		break;
 	}
