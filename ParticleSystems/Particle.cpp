@@ -54,6 +54,13 @@ void Particle::integrate() {
 	// clear forces on particle (they get re-added each step)
 	//
 	forces.set(0, 0, 0);
+
+	rotation += (angularVelocity * dt);
+	float a = angularAcceleration;
+	a += (angularForce * 1.0 / mass);
+	angularVelocity += a * dt;
+	angularVelocity *= damping;
+	angularForce = 0;
 }
 
 //  return age in seconds

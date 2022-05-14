@@ -5,6 +5,7 @@
 #include "Octree/Octree.h"
 #include <glm/gtx/intersect.hpp>
 #include "ParticleSystems/Lander.h"
+#include "ParticleSystems/ParticleEmitter.h"
 
 
 class ofApp : public ofBaseApp{
@@ -28,6 +29,7 @@ class ofApp : public ofBaseApp{
 		void gotMessage(ofMessage msg);
 		void drawAxis(ofVec3f);
 		void initLightingAndMaterials();
+		void reset();
 		void savePicture();
 		void toggleWireframeMode();
 		void togglePointsDisplay();
@@ -35,13 +37,18 @@ class ofApp : public ofBaseApp{
 		void setCameraTarget();
 		bool mouseIntersectPlane(ofVec3f planePoint, ofVec3f planeNorm, ofVec3f &point);
 		bool raySelectWithOctree(ofVec3f &pointRet);
+		float getAltitude();
+		bool checkCollosion();
 		glm::vec3 ofApp::getMousePointOnPlane(glm::vec3 p , glm::vec3 n);
 
-		ofEasyCam cam;
+		ofEasyCam mainCam;
+		ofCamera landerCam;
+		ofCamera sideCam;
+		ofCamera* theCam;
 		ofxAssimpModelLoader mars;
 		Lander lander;
 		ofLight light;
-		Box boundingBox, landerBounds;
+		Box boundingBox, landerBounds,landingZoneBox;
 		Box testBox;
 		vector<Box> colBoxList;
 		bool bLanderSelected = false;
@@ -54,6 +61,8 @@ class ofApp : public ofBaseApp{
 		ofxIntSlider numLevels;
 		ofxPanel gui;
 
+		bool started;
+		bool gameover;
 		bool bAltKeyDown;
 		bool bCtrlKeyDown;
 		bool bWireframe;
@@ -64,6 +73,7 @@ class ofApp : public ofBaseApp{
 		bool bDisplayLeafNodes = false;
 		bool bDisplayOctree = false;
 		bool bDisplayBBoxes = false;
+		bool drawAltitude = false;
 		
 		bool bLanderLoaded;
 		bool bTerrainSelected;
@@ -71,9 +81,28 @@ class ofApp : public ofBaseApp{
 		ofVec3f selectedPoint;
 		ofVec3f intersectPoint;
 
+		//Prep Explosions
+		ParticleEmitter* explosions;
+
+		//Set Images
+		ofImage playerSprite;
+		ofImage enemySprite;
 		ofImage background;
+		ofImage asteroid;
+
+		//Set Font
+		ofTrueTypeFont font;
+
+		//Set Sounds
+		ofSoundPlayer backgroundSound;
+		ofSoundPlayer* thrustSound;
+		ofSoundPlayer* explodeSound;
 
 		vector<Box> bboxList;
+
+
+		time_t time_start, time_finish;
+		glm::vec3 landingZone;
 
 		const float selectionRange = 4.0;
 };

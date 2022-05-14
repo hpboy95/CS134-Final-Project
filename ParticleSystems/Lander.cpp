@@ -12,31 +12,34 @@ void Lander::load(string filePath) {
 
 
 void Lander::draw() {
+	ofPushMatrix();
+	ofTranslate(position);
+	ofRotateY(rotation);
 	model.drawFaces();
+	ofPopMatrix();
 }
 
 void Lander::update() {
-	for (int k = 0; k < forces.size(); k++) {
-		if (!forces[k]->applied)
-			forces[k]->updateForce(this);
+	for (int k = 0; k < forceList.size(); k++) {
+		if (!forceList[k]->applied)
+			forceList[k]->updateForce(this);
 	}
 
-	for (int i = 0; i < forces.size(); i++) {
-		if (forces[i]->applyOnce) {
-			forces[i]->applied = true;
+	for (int i = 0; i < forceList.size(); i++) {
+		if (forceList[i]->applyOnce) {
+			forceList[i]->applied = true;
 		}
 	}
 
 	integrate();
-	model.setPosition(position.x, position.y, position.z);
 }
 
 void Lander::addForce(ParticleForce* f) {
 	f->applied = false;
-	forces.push_back(f);
+	forceList.push_back(f);
 }
 
-// Gravity Force Field 
+// Lander Forces
 //
 ComputeUp::ComputeUp(const ofVec3f& t) {
 	thrust = t;
@@ -49,3 +52,67 @@ void ComputeUp::updateForce(Particle* particle) {
 	//
 	particle->forces += thrust * particle->mass;
 }
+
+ComputeDown::ComputeDown(const ofVec3f& t) {
+	thrust = -t;
+	applyOnce = true;
+}
+
+void ComputeDown::updateForce(Particle* particle) {
+	//
+	// f = mg
+	//
+	particle->forces += thrust * particle->mass;
+}
+
+ComputeForward::ComputeForward(const float& t) {
+	thrust = t;
+	applyOnce = true;
+}
+
+void ComputeForward::updateForce(Particle* particle) {
+	//
+	// f = mg
+	//
+	particle->forces += thrust * particle->getHeading();
+}
+
+ComputeBackward::ComputeBackward(const float& t) {
+	thrust = -t;
+	applyOnce = true;
+}
+
+void ComputeBackward::updateForce(Particle* particle) {
+	//
+	// f = mg
+	//
+	particle->forces += thrust * particle->getHeading();
+}
+
+ComputeLeft::ComputeLeft(const float& t) {
+	thrust = t;
+	applyOnce = true;
+}
+
+void ComputeLeft::updateForce(Particle* particle) {
+	//
+	// f = mg
+	//
+	particle->angularForce -= thrust;
+}
+
+ComputeRight::ComputeRight(const float& t) {
+	thrust = t;
+	applyOnce = true;
+}
+
+void ComputeRight::updateForce(Particle* particle) {
+	//
+	// f = mg
+	//
+	particle->angularForce += thrust;
+}
+
+
+
+
