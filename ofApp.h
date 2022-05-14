@@ -38,7 +38,8 @@ class ofApp : public ofBaseApp{
 		bool mouseIntersectPlane(ofVec3f planePoint, ofVec3f planeNorm, ofVec3f &point);
 		bool raySelectWithOctree(ofVec3f &pointRet);
 		float getAltitude();
-		bool checkCollosion();
+		bool checkCollision();
+		void resolveCollision();
 		glm::vec3 ofApp::getMousePointOnPlane(glm::vec3 p , glm::vec3 n);
 
 		ofEasyCam mainCam;
@@ -99,6 +100,7 @@ class ofApp : public ofBaseApp{
 		ofSoundPlayer* explodeSound;
 
 		vector<Box> bboxList;
+		vector<TreeNode> nodeList;
 
 
 		time_t time_start, time_finish;

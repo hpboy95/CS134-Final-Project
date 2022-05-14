@@ -113,6 +113,17 @@ void ComputeRight::updateForce(Particle* particle) {
 	particle->angularForce += thrust;
 }
 
+ImpulseForce::ImpulseForce(const ofVec3f& t) {
+	thrust = t;
+	applyOnce = true;
+}
+
+void ImpulseForce::updateForce(Particle* particle) {
+	//
+	// f = mg
+	//
+	particle->forces += thrust * particle->mass;
+}
 
 
 

@@ -103,6 +103,10 @@ void ofApp::update() {
 		landerCam.lookAt(landerCamPosition + glm::vec3(0, -10, 0)); //Look right below camera point
 		sideCam.setPosition(landingZone + glm::vec3(0, 2, 0));
 		sideCam.lookAt(lander.position);
+		bool collision = checkCollision();
+		if (collision) {
+			resolveCollision();
+		}
 	}
 }
 //--------------------------------------------------------------
@@ -190,8 +194,8 @@ void ofApp::draw() {
 
 				if (bLanderSelected) {
 
-					ofVec3f min = lander.model.getSceneMin() + lander.model.getPosition();
-					ofVec3f max = lander.model.getSceneMax() + lander.model.getPosition();
+					ofVec3f min = lander.model.getSceneMin() + lander.position;
+					ofVec3f max = lander.model.getSceneMax() + lander.position;
 
 					Box bounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
 					ofSetColor(ofColor::white);
@@ -494,14 +498,14 @@ void ofApp::mousePressed(int x, int y, int button) {
 		glm::vec3 mouseWorld = mainCam.screenToWorld(glm::vec3(mouseX, mouseY, 0));
 		glm::vec3 mouseDir = glm::normalize(mouseWorld - origin);
 
-		ofVec3f min = lander.model.getSceneMin() + lander.model.getPosition();
-		ofVec3f max = lander.model.getSceneMax() + lander.model.getPosition();
+		ofVec3f min = lander.model.getSceneMin() + lander.position;
+		ofVec3f max = lander.model.getSceneMax() + lander.position;
 
 		Box bounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
 		bool hit = bounds.intersect(Ray(Vector3(origin.x, origin.y, origin.z), Vector3(mouseDir.x, mouseDir.y, mouseDir.z)), 0, 10000);
 		if (hit) {
 			bLanderSelected = true;
-			mouseDownPos = getMousePointOnPlane(lander.model.getPosition(), mainCam.getZAxis());
+			mouseDownPos = getMousePointOnPlane(lander.position, mainCam.getZAxis());
 			mouseLastPos = mouseDownPos;
 			bInDrag = true;
 		}
@@ -535,7 +539,6 @@ bool ofApp::raySelectWithOctree(ofVec3f &pointRet) {
 		cout << "Y: " << mars.getMesh(0).getVertex(selectedNode.points[0]).y << endl;
 		cout << "Z: " << mars.getMesh(0).getVertex(selectedNode.points[0]).z << endl;
 	}
-
 	return pointSelected;
 }
 
@@ -551,17 +554,17 @@ void ofApp::mouseDragged(int x, int y, int button) {
 
 	if (bInDrag) {
 
-		glm::vec3 landerPos = lander.model.getPosition();
+		glm::vec3 landerPos = lander.position;
 
 		glm::vec3 mousePos = getMousePointOnPlane(landerPos, mainCam.getZAxis());
 		glm::vec3 delta = mousePos - mouseLastPos;
 	
 		landerPos += delta;
-		lander.model.setPosition(landerPos.x, landerPos.y, landerPos.z);
+		lander.position = landerPos;
 		mouseLastPos = mousePos;
 
-		ofVec3f min = lander.model.getSceneMin() + lander.model.getPosition();
-		ofVec3f max = lander.model.getSceneMax() + lander.model.getPosition();
+		ofVec3f min = lander.model.getSceneMin() + lander.position;
+		ofVec3f max = lander.model.getSceneMax() + lander.position;
 
 		Box bounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
 
@@ -783,6 +786,50 @@ float ofApp::getAltitude() {
 	octree.intersect(r, octree.root, selectedNode);
 	glm::vec3 point = mars.getMesh(0).getVertex(selectedNode.points[0]);
 	return glm::distance(point, position);
+}
+
+bool ofApp::checkCollision() {
+	ofVec3f min = lander.model.getSceneMin() + lander.position;
+	ofVec3f max = lander.model.getSceneMax() + lander.position;
+
+	Box bounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
+
+	nodeList.clear();
+	octree.intersect(bounds, octree.root, nodeList);
+	if (nodeList.size() > 0) {
+		for (int i = 0; i < nodeList.size(); i++) {
+			glm::vec3 point = octree.mesh.getVertex(nodeList[i].points[0]);
+			if (bounds.inside(Vector3(point.x, point.y, point.z))) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+void ofApp::resolveCollision() {
+	ofVec3f min = lander.model.getSceneMin() + lander.position;
+	ofVec3f max = lander.model.getSceneMax() + lander.position;
+
+	Box bounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
+	//Set lander back above ground
+	float highestY = -100000.0f;
+	int highestIndex = 0;
+	for (int i = 0; i < nodeList.size(); i ++ ) {
+		glm::vec3 point = octree.mesh.getVertex(nodeList[i].points[0]);
+		if (bounds.inside(Vector3(point.x, point.y, point.z))) {
+			if (point.y > highestY) {
+				highestY = point.y;
+				highestIndex = i;
+			}
+		}
+	}
+	float difference = highestY - min.y + 0.5;
+	lander.position = glm::vec3(lander.position.x, lander.position.y + difference, lander.position.z);
+	lander.removeForces();
+	glm::vec3 normal = mars.getMesh(0).getNormal(highestIndex);
+	glm::vec3 impulse = (1 + 0.85) * ((-lander.velocity).dot(normal) * normal);
+	lander.addForce(new ImpulseForce(impulse));
 }
 
 void ofApp::reset() {

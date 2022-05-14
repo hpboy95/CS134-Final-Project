@@ -273,6 +273,25 @@ bool Octree::intersect(const Box &box, TreeNode & node, vector<Box> & boxListRtn
 	return false;
 }
 
+bool Octree::intersect(const Box& box, TreeNode& node, vector<TreeNode>& boxListRtn) {
+	bool overlap = false;
+	if (node.children.size() == 0) {
+		boxListRtn.push_back(node);
+	}
+	else {
+		for (int i = 0; i < node.children.size(); i++) { //go though all the children
+			bool overlap = node.children[i].box.overlap(box); //This will set all the points in the box in the node
+			if (overlap) { //Child overlaps
+				intersect(box, node.children[i], boxListRtn);
+			}
+		}
+	}
+	if (boxListRtn.size() > 1) {
+		return true;
+	}
+	return false;
+}
+
 void Octree::draw(TreeNode & node, int numLevels, int level) {
 	if (level >= numLevels) return;
 	ofSetColor(colors[level]);

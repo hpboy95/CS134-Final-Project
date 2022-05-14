@@ -72,3 +72,12 @@ public:
 	ComputeRight() {}
 	void updateForce(Particle*);
 };
+
+class ImpulseForce : public ParticleForce {
+	ofVec3f thrust;
+public:
+	void set(const ofVec3f& g) { thrust = g; }
+	ImpulseForce(const ofVec3f& thrust);
+	ImpulseForce() {}
+	void updateForce(Particle*);
+};
