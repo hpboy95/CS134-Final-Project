@@ -40,6 +40,7 @@ class ofApp : public ofBaseApp{
 		float getAltitude();
 		bool checkCollision();
 		void resolveCollision();
+		void loadVbo();
 		glm::vec3 ofApp::getMousePointOnPlane(glm::vec3 p , glm::vec3 n);
 
 		ofEasyCam mainCam;
@@ -64,6 +65,7 @@ class ofApp : public ofBaseApp{
 
 		bool started;
 		bool gameover;
+		bool victory = false;
 		bool bAltKeyDown;
 		bool bCtrlKeyDown;
 		bool bWireframe;
@@ -107,4 +109,18 @@ class ofApp : public ofBaseApp{
 		glm::vec3 landingZone;
 
 		const float selectionRange = 4.0;
+		float radius = 10.0;
+
+		// textures
+		//
+		ofTexture  particleTex;
+
+		// shaders
+		//
+		ofVbo vbo;
+		ofShader shader;
+
+		// Emitter and some forces;
+		//
+		ParticleEmitter emitter;
 };

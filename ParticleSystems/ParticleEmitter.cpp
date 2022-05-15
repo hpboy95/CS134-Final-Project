@@ -130,7 +130,7 @@ void ParticleEmitter::spawn(float time) {
 		break;
 	case DirectionalEmitter:
 		particle.velocity = velocity;
-		particle.position.set(position);
+		particle.position.set(position + ofVec3f(ofRandom(-0.5, 0.5), ofRandom(0, 0), ofRandom(-0.5, 0.5)));
 		break;
 	
 	}

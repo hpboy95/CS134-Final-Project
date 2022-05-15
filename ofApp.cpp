@@ -90,8 +90,56 @@ void ofApp::setup(){
 	glm::vec3 landingMax = landingZone + glm::vec3(10);
 	landingZoneBox = Box(Vector3(landingMin.x, landingMin.y, landingMin.z), Vector3(landingMax.x, landingMax.y, landingMax.z));
 
+	//Set the emitter
+	emitter.setPosition(lander.position);
+	emitter.setEmitterType(DirectionalEmitter);
+	emitter.sys->addForce(new DownwardForce(10));
+	emitter.setVelocity(ofVec3f(0, 0, 0));
+	emitter.setOneShot(true);
+	emitter.setGroupSize(50);
+	emitter.setRandomLife(true);
+	emitter.setLifespanRange(ofVec2f(0.5, 1));
+
+	// texture loading
+	//
+	ofDisableArbTex();     // disable rectangular textures
+
+	// load textures
+	//
+	if (!ofLoadImage(particleTex, "images/dot.png")) {
+		cout << "Particle Texture File: images/dot.png not found" << endl;
+		ofExit();
+	}
+
+	// load the shader
+	//
+	#ifdef TARGET_OPENGLES
+		shader.load("shaders_gles/shader");
+	#else
+		shader.load("shaders/shader");
+	#endif
 }
  
+// load vertex buffer in preparation for rendering
+//
+void ofApp::loadVbo() {
+	if (emitter.sys->particles.size() < 1) return;
+
+	vector<ofVec3f> sizes;
+	vector<ofVec3f> points;
+	for (int i = 0; i < emitter.sys->particles.size(); i++) {
+		points.push_back(emitter.sys->particles[i].position);
+		sizes.push_back(ofVec3f(radius));
+	}
+	// upload the data to the vbo
+	//
+	int total = (int)points.size();
+	vbo.clear();
+	vbo.setVertexData(&points[0], total, GL_STATIC_DRAW);
+	vbo.setNormalData(&sizes[0], total, GL_STATIC_DRAW);
+}
+
+
 //--------------------------------------------------------------
 // incrementally update scene (animation)
 //
@@ -103,6 +151,8 @@ void ofApp::update() {
 		landerCam.lookAt(landerCamPosition + glm::vec3(0, -10, 0)); //Look right below camera point
 		sideCam.setPosition(landingZone + glm::vec3(0, 2, 0));
 		sideCam.lookAt(lander.position);
+		emitter.setPosition(lander.position);
+		emitter.update();
 		bool collision = checkCollision();
 		if (collision) {
 			resolveCollision();
@@ -123,6 +173,87 @@ void ofApp::draw() {
 		ofPopMatrix();
 	}
 	if (gameover) {
+		loadVbo();
+		glDepthMask(false);
+		ofSetColor(ofColor::white);
+		background.draw(0, 0);
+
+		if (!bHide) gui.draw();
+		glDepthMask(true);
+
+		theCam->begin();
+
+		//Draw Particles
+		shader.begin();
+		ofEnableBlendMode(OF_BLENDMODE_ADD); // this makes everything look glowy :)
+		ofEnablePointSprites();
+		ofSetColor(ofColor::red);
+		particleTex.bind();
+		vbo.draw(GL_POINTS, 0, (int)emitter.sys->particles.size());
+		vbo.draw(GL_POINTS, 0, (int)emitter.sys->particles.size());
+		particleTex.unbind();
+		shader.end();
+		ofDisablePointSprites();
+		ofDisableBlendMode();
+		ofEnableAlphaBlending();
+
+		ofPushMatrix();
+		if (bWireframe) {                    // wireframe mode  (include axis)
+			ofDisableLighting();
+			ofSetColor(ofColor::slateGray);
+			mars.drawWireframe();
+			if (bLanderLoaded) {
+				lander.model.drawWireframe();
+				if (!bTerrainSelected) drawAxis(lander.model.getPosition());
+			}
+			if (bTerrainSelected) drawAxis(ofVec3f(0, 0, 0));
+		}
+		else {
+			ofEnableLighting();              // shaded mode
+			mars.drawFaces();
+			ofMesh mesh;
+			if (bLanderLoaded) {
+				lander.draw();
+				if (!bTerrainSelected) drawAxis(lander.model.getPosition());
+				if (bDisplayBBoxes) {
+					ofNoFill();
+					ofSetColor(ofColor::white);
+					for (int i = 0; i < lander.model.getNumMeshes(); i++) {
+						ofPushMatrix();
+						ofMultMatrix(lander.model.getModelMatrix());
+						ofRotate(-90, 1, 0, 0);
+						Octree::drawBox(bboxList[i]);
+						ofPopMatrix();
+					}
+				}
+
+				if (bLanderSelected) {
+
+					ofVec3f min = lander.model.getSceneMin() + lander.position;
+					ofVec3f max = lander.model.getSceneMax() + lander.position;
+
+					Box bounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
+					ofSetColor(ofColor::white);
+					Octree::drawBox(bounds);
+
+					// draw colliding boxes
+					//
+					ofSetColor(ofColor::lightBlue);
+					for (int i = 0; i < colBoxList.size(); i++) {
+						Octree::drawBox(colBoxList[i]);
+					}
+				}
+			}
+		}
+
+		//Draw Landing Zone
+		ofSetColor(ofColor::green);
+		octree.drawBox(landingZoneBox);
+		ofPopMatrix();
+		theCam->end();
+
+
+		//Draw Game Over Text
 		ofSetColor(ofColor::orange);
 		ofPushMatrix();
 		ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2 - 80);
@@ -154,6 +285,7 @@ void ofApp::draw() {
 		ofPopMatrix();
 	}
 	if (started && !gameover) {
+		loadVbo();
 		glDepthMask(false);
 		ofSetColor(ofColor::white);
 		background.draw(0, 0);
@@ -162,6 +294,21 @@ void ofApp::draw() {
 		glDepthMask(true);
 
 		theCam->begin();
+
+		//Draw Particles
+		shader.begin();
+		ofEnableBlendMode(OF_BLENDMODE_ADD); // this makes everything look glowy :)
+		ofEnablePointSprites();
+		ofSetColor(ofColor::red);
+		particleTex.bind();
+		vbo.draw(GL_POINTS, 0, (int)emitter.sys->particles.size());
+		vbo.draw(GL_POINTS, 0, (int)emitter.sys->particles.size());
+		particleTex.unbind();
+		shader.end();
+		ofDisablePointSprites();
+		ofDisableBlendMode();
+		ofEnableAlphaBlending();
+
 		ofPushMatrix();
 		if (bWireframe) {                    // wireframe mode  (include axis)
 			ofDisableLighting();
@@ -245,6 +392,8 @@ void ofApp::draw() {
 			ofSetColor(ofColor::lightGreen);
 			ofDrawSphere(p, .02 * d.length());
 		}
+
+		//Draw Landing Zone
 		ofSetColor(ofColor::green);
 		octree.drawBox(landingZoneBox);
 		ofPopMatrix();
@@ -388,6 +537,8 @@ void ofApp::keyPressed(int key) {
 			break;
 		case ' ':
 			lander.addForce(new ComputeUp(glm::vec3(0, 10, 0)));
+			emitter.sys->reset();
+			emitter.start();
 			break;
 		case OF_KEY_SHIFT:
 			lander.addForce(new ComputeDown(glm::vec3(0, 10, 0)));
@@ -824,12 +975,29 @@ void ofApp::resolveCollision() {
 			}
 		}
 	}
-	float difference = highestY - min.y + 0.5;
-	lander.position = glm::vec3(lander.position.x, lander.position.y + difference, lander.position.z);
+	float downVelocity = -lander.velocity.y;
+	float difference = highestY - min.y;
+	lander.position = glm::vec3(lander.position.x, lander.position.y + difference - lander.velocity.y, lander.position.z);
 	lander.removeForces();
 	glm::vec3 normal = mars.getMesh(0).getNormal(highestIndex);
 	glm::vec3 impulse = (1 + 0.85) * ((-lander.velocity).dot(normal) * normal);
 	lander.addForce(new ImpulseForce(impulse));
+	if (downVelocity < 2 && landingZoneBox.inside(Vector3(lander.position.x, lander.position.y, lander.position.z))) {
+		victory = true;
+		gameover = true;
+	}
+	else {
+		gameover = true;
+		emitter.setEmitterType(RadialEmitter);
+		emitter.sys->removeForces();
+		emitter.sys->addForce(new ImpulseRadialForce(500));
+		emitter.setVelocity(ofVec3f(0, 0, 0));
+		emitter.setRandomLife(true);
+		emitter.setLifespanRange(ofVec2f(1, 2));
+		emitter.setGroupSize(10000);
+		emitter.sys->reset();
+		emitter.start();
+	}
 }
 
 void ofApp::reset() {

@@ -72,3 +72,12 @@ public:
 	void updateForce(Particle *);
 };
 
+class DownwardForce : public ParticleForce {
+	float magnitude = 1.0;
+public:
+	void set(float mag) { magnitude = mag; }
+	DownwardForce(float magnitude);
+	DownwardForce() {}
+	void updateForce(Particle*);
+};
+

@@ -143,3 +143,13 @@ void CyclicForce::updateForce(Particle * particle) {
 	particle->forces += dir.getNormalized() * magnitude;
 }
 
+
+DownwardForce::DownwardForce(float magnitude) {
+	this->magnitude = magnitude;
+}
+
+void DownwardForce::updateForce(Particle* particle) {
+	particle->forces += ofVec3f(0, -1, 0) * magnitude;
+}
+
+
