@@ -76,6 +76,8 @@ class ofApp : public ofBaseApp{
 		bool bDisplayLeafNodes = false;
 		bool bDisplayOctree = false;
 		bool bDisplayBBoxes = false;
+		bool playThrust;
+		bool thrustPlaying;
 		
 		bool bLanderLoaded;
 		bool bTerrainSelected;
@@ -107,6 +109,7 @@ class ofApp : public ofBaseApp{
 
 		vector<Box> bboxList;
 		vector<TreeNode> nodeList;
+		map<string, bool> keysPressed;
 
 		float last_check;
 		time_t time_start, time_finish;

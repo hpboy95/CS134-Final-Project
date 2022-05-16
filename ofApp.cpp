@@ -35,6 +35,14 @@ void ofApp::setup(){
 	ofEnableSmoothing();
 	ofEnableDepthTest();
 
+	//Setup keys
+	keysPressed["space"] = false;
+	keysPressed["shift"] = false;
+	keysPressed["up"] = false;
+	keysPressed["down"] = false;
+	keysPressed["left"] = false;
+	keysPressed["right"] = false;
+
 	// setup rudimentary lighting 
 	//
 	initLightingAndMaterials();
@@ -172,6 +180,45 @@ void ofApp::loadVbo() {
 //
 void ofApp::update() {
 	if (started && !gameover) {
+		//Update Keys
+		if (keysPressed["up"]) {
+			lander.addForce(new ComputeForward(10));
+		}
+		if (keysPressed["down"]) {
+			lander.addForce(new ComputeBackward(10));
+		}
+		if (keysPressed["left"]) {
+			lander.addForce(new ComputeLeft(35));
+		}
+		if (keysPressed["right"]) {
+			lander.addForce(new ComputeRight(35));
+		}
+		if (keysPressed["space"]) {
+			lander.addForce(new ComputeUp(glm::vec3(0, 10, 0)));
+			emitter.sys->reset();
+			emitter.start();
+		}
+		if (keysPressed["shift"]) {
+			lander.addForce(new ComputeDown(glm::vec3(0, 10, 0)));
+		}
+
+		if (keysPressed["up"] || keysPressed["down"] || keysPressed["left"] || keysPressed["right"] || keysPressed["shift"] || keysPressed["space"]) {
+			playThrust = true;
+		}
+		else {
+			playThrust = false;
+		}
+
+		if (playThrust && !thrustPlaying) {
+			thrustSound.play();
+			thrustPlaying = true;
+		} 
+		if (!playThrust) {
+			thrustSound.stop();
+			thrustPlaying = false;
+		}
+
+		//Update Everything Else
 		lander.update();
 		glm::vec3 landerCamPosition = lander.position + glm::vec3(0, 10, 0);
 		landerCam.setPosition(landerCamPosition);
@@ -214,14 +261,24 @@ void ofApp::draw() {
 		font.drawString(text, -fontWidth / 2, 0);
 		ofPopMatrix();
 
+		ofPushMatrix();
 		ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
-		text = "Land The Lunar Lander in the Landing Area!";
+		text = "Land The Lunar Lander!";
 		fontWidth = font.stringWidth(text);
 		ofSetColor(ofColor::orange);
 		font.drawString(text, -fontWidth / 2, 0);
 		ofPopMatrix();
 
+		ofPushMatrix();
 		ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2 + 80);
+		text = "Landing Zone Marked in Blue";
+		fontWidth = font.stringWidth(text);
+		ofSetColor(ofColor::orange);
+		font.drawString(text, -fontWidth / 2, 0);
+		ofPopMatrix();
+
+		ofPushMatrix();
+		ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2 + 160);
 		text = "Careful! Don't Fall too fast!";
 		fontWidth = font.stringWidth(text);
 		ofSetColor(ofColor::orange);
@@ -594,25 +651,22 @@ void ofApp::keyPressed(int key) {
 		case OF_KEY_DEL:
 			break;
 		case ' ':
-			lander.addForce(new ComputeUp(glm::vec3(0, 10, 0)));
-			emitter.sys->reset();
-			emitter.start();
-			thrustSound.play();
+			keysPressed["space"] = true;
 			break;
 		case OF_KEY_SHIFT:
-			lander.addForce(new ComputeDown(glm::vec3(0, 10, 0)));
+			keysPressed["shift"] = true;
 			break;
 		case OF_KEY_UP:
-			lander.addForce(new ComputeForward(10));
+			keysPressed["up"] = true;
 			break;
 		case OF_KEY_DOWN:
-			lander.addForce(new ComputeBackward(10));
+			keysPressed["down"] = true;
 			break;
 		case OF_KEY_LEFT:
-			lander.addForce(new ComputeLeft(35));
+			keysPressed["left"] = true;
 			break;
 		case OF_KEY_RIGHT:
-			lander.addForce(new ComputeRight(35));
+			keysPressed["right"] = true;
 			break;
 		case OF_KEY_F1:
 			theCam = &sideCam;
@@ -678,10 +732,24 @@ void ofApp::keyReleased(int key) {
 	case OF_KEY_CONTROL:
 		bCtrlKeyDown = false;
 		break;
-	case OF_KEY_SHIFT:
-		break;
 	case ' ':
-		thrustSound.stop();
+		keysPressed["space"] = false;
+		break;
+	case OF_KEY_SHIFT:
+		keysPressed["shift"] = false;
+		break;
+	case OF_KEY_UP:
+		keysPressed["up"] = false;
+		break;
+	case OF_KEY_DOWN:
+		keysPressed["down"] = false;
+		break;
+	case OF_KEY_LEFT:
+		keysPressed["left"] = false;
+		break;
+	case OF_KEY_RIGHT:
+		keysPressed["right"] = false;
+		break;
 	default:
 		break;
 
