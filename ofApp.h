@@ -49,6 +49,7 @@ class ofApp : public ofBaseApp{
 		ofCamera* theCam;
 		ofxAssimpModelLoader mars;
 		Lander lander;
+		ofColor landerBoxColor = ofColor::green;
 		ofLight light;
 		Box boundingBox, landerBounds,landingZoneBox;
 		Box testBox;
@@ -58,6 +59,7 @@ class ofApp : public ofBaseApp{
 		TreeNode selectedNode;
 		glm::vec3 mouseDownPos, mouseLastPos;
 		bool bInDrag = false;
+		float currentAltitude;
 
 
 		ofxIntSlider numLevels;
@@ -83,6 +85,8 @@ class ofApp : public ofBaseApp{
 	
 		ofVec3f selectedPoint;
 		ofVec3f intersectPoint;
+
+		//Altitude Stuff
 
 		//Prep Explosions
 		ParticleEmitter* explosions;

@@ -30,8 +30,8 @@ void ofApp::setup(){
 	mainCam.setDistance(50);
 	mainCam.setNearClip(.1);
 	mainCam.setFov(65.5);   // approx equivalent to 28mm in 35mm format
+	mainCam.setPosition(mainCam.getPosition() + glm::vec3(0, 100, 0));
 	ofSetVerticalSync(true);
-	mainCam.disableMouseInput();
 	ofEnableSmoothing();
 	ofEnableDepthTest();
 
@@ -158,6 +158,14 @@ void ofApp::update() {
 			resolveCollision();
 		}
 	}
+	if (gameover) {
+		lander.update();
+		emitter.update();
+		bool collision = checkCollision();
+		if (collision) {
+			resolveCollision();
+		}
+	}
 }
 //--------------------------------------------------------------
 void ofApp::draw() {
@@ -260,16 +268,22 @@ void ofApp::draw() {
 		int difference = difftime(time_finish, time_start);
 		int minutes = difference / 60;
 		int seconds = difference % 60;
-		string text = "Game Over";
+		string text;
+		if (victory) {
+			text = "You Win!";
+		}
+		else {
+			text = "Game Over";
+		}
 		float fontWidth = font.stringWidth(text);
 		font.drawString(text, -fontWidth / 2, 0);
 		ofPopMatrix();
 		char buffer[100];
 		if (minutes > 0) {
-			snprintf(buffer, 100, "You Survived %d Minutes and %02d Seconds", minutes, seconds);
+			snprintf(buffer, 100, "You Landed in %d Minutes and %02d Seconds", minutes, seconds);
 		}
 		else {
-			snprintf(buffer, 100, "You Survived %d Seconds", seconds);
+			snprintf(buffer, 100, "You Landed in %d Seconds", seconds);
 		}
 		ofSetColor(ofColor::orange);
 		ofPushMatrix();
@@ -562,6 +576,7 @@ void ofApp::keyPressed(int key) {
 			theCam = &landerCam;
 			break;
 		case OF_KEY_F3:
+			mainCam.lookAt(lander.position);
 			theCam = &mainCam;
 			break;
 		default:
@@ -976,8 +991,8 @@ void ofApp::resolveCollision() {
 		}
 	}
 	float downVelocity = -lander.velocity.y;
-	float difference = highestY - min.y;
-	lander.position = glm::vec3(lander.position.x, lander.position.y + difference - lander.velocity.y, lander.position.z);
+	//float difference = highestY - min.y;
+	lander.position = glm::vec3(lander.position.x, lander.position.y - lander.velocity.y, lander.position.z);
 	lander.removeForces();
 	glm::vec3 normal = mars.getMesh(0).getNormal(highestIndex);
 	glm::vec3 impulse = (1 + 0.85) * ((-lander.velocity).dot(normal) * normal);
@@ -987,19 +1002,37 @@ void ofApp::resolveCollision() {
 		gameover = true;
 	}
 	else {
-		gameover = true;
-		emitter.setEmitterType(RadialEmitter);
-		emitter.sys->removeForces();
-		emitter.sys->addForce(new ImpulseRadialForce(500));
-		emitter.setVelocity(ofVec3f(0, 0, 0));
-		emitter.setRandomLife(true);
-		emitter.setLifespanRange(ofVec2f(1, 2));
-		emitter.setGroupSize(10000);
-		emitter.sys->reset();
-		emitter.start();
+		if (!gameover) {
+			gameover = true;
+			emitter.setEmitterType(RadialEmitter);
+			emitter.sys->removeForces();
+			emitter.sys->addForce(new ImpulseRadialForce(500));
+			emitter.setVelocity(ofVec3f(0, 0, 0));
+			emitter.setRandomLife(true);
+			emitter.setLifespanRange(ofVec2f(1, 2));
+			emitter.setGroupSize(10000);
+			emitter.sys->reset();
+			emitter.start();
+		}
 	}
 }
 
 void ofApp::reset() {
-	
+	//Set the Lander
+	lander.position = glm::vec3(1, 100, 0);
+	lander.removeForces();
+	GravityForce* f = new GravityForce(glm::vec3(0, -1.625, 0));
+	f->applyOnce = false;
+	lander.addForce(f);
+
+	//Set the emitter
+	emitter.sys->removeForces();
+	emitter.setPosition(lander.position);
+	emitter.setEmitterType(DirectionalEmitter);
+	emitter.sys->addForce(new DownwardForce(10));
+	emitter.setVelocity(ofVec3f(0, 0, 0));
+	emitter.setOneShot(true);
+	emitter.setGroupSize(50);
+	emitter.setRandomLife(true);
+	emitter.setLifespanRange(ofVec2f(0.5, 1));
 }
