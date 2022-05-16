@@ -98,7 +98,7 @@ void ComputeLeft::updateForce(Particle* particle) {
 	//
 	// f = mg
 	//
-	particle->angularForce -= thrust;
+	particle->angularForce += thrust;
 }
 
 ComputeRight::ComputeRight(const float& t) {
@@ -110,7 +110,7 @@ void ComputeRight::updateForce(Particle* particle) {
 	//
 	// f = mg
 	//
-	particle->angularForce += thrust;
+	particle->angularForce -= thrust;
 }
 
 ImpulseForce::ImpulseForce(const ofVec3f& t) {

@@ -70,6 +70,8 @@ void ofApp::setup(){
 	GravityForce *f = new GravityForce(glm::vec3(0, -1.625, 0));
 	f->applyOnce = false;
 	lander.addForce(f);
+	currentAltitude = getAltitude();
+	last_check = ofGetElapsedTimeMillis();
 
 	// Load Fonts
 	font.load("fonts/OpenSans-Semibold.ttf", 50);
@@ -99,6 +101,31 @@ void ofApp::setup(){
 	emitter.setGroupSize(50);
 	emitter.setRandomLife(true);
 	emitter.setLifespanRange(ofVec2f(0.5, 1));
+
+	//Load Sounds
+	if(backgroundSound.load("sounds/Hardmoon_-_Deep_space.mp3")) {
+	}
+	else {
+	cout << "Can't open sound file" << endl;
+	ofExit();
+	}
+	if (thrustSound.load("sounds/ScatterNoise1.mp3")) {
+	}
+	else {
+		cout << "Can't open sound file" << endl;
+		ofExit();
+	}
+	if (explodeSound.load("sounds/explosion.wav")) {
+	}
+	else {
+		cout << "Can't open sound file" << endl;
+		ofExit();
+	}
+	thrustSound.setLoop(true);
+	explodeSound.setVolume(0.50);
+	backgroundSound.setVolume(0.50);
+	backgroundSound.setLoop(true);
+	backgroundSound.play();
 
 	// texture loading
 	//
@@ -153,29 +180,50 @@ void ofApp::update() {
 		sideCam.lookAt(lander.position);
 		emitter.setPosition(lander.position);
 		emitter.update();
-		bool collision = checkCollision();
-		if (collision) {
-			resolveCollision();
-		}
 	}
 	if (gameover) {
 		lander.update();
 		emitter.update();
-		bool collision = checkCollision();
-		if (collision) {
-			resolveCollision();
-		}
+	}
+	bool collision = checkCollision();
+	if (collision) {
+		resolveCollision();
+	}
+	//check if in GoalZone
+	if (!landingZoneBox.inside(Vector3(lander.position.x, lander.position.y, lander.position.z))) {
+		landerBoxColor = ofColor::green;
+	}
+	else {
+		landerBoxColor = ofColor::blue;
+	}
+	if (ofGetElapsedTimeMillis() - last_check > 1000) {
+		currentAltitude = getAltitude();
+		last_check = ofGetElapsedTimeMillis();
 	}
 }
+
 //--------------------------------------------------------------
 void ofApp::draw() {
 	if (!started) {
 		ofSetBackgroundColor(ofColor::black);
 		ofPushMatrix();
-		ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
-
+		ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2 - 80);
 		string text = "Press Enter to Start";
 		float fontWidth = font.stringWidth(text);
+		ofSetColor(ofColor::orange);
+		font.drawString(text, -fontWidth / 2, 0);
+		ofPopMatrix();
+
+		ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
+		text = "Land The Lunar Lander in the Landing Area!";
+		fontWidth = font.stringWidth(text);
+		ofSetColor(ofColor::orange);
+		font.drawString(text, -fontWidth / 2, 0);
+		ofPopMatrix();
+
+		ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2 + 80);
+		text = "Careful! Don't Fall too fast!";
+		fontWidth = font.stringWidth(text);
 		ofSetColor(ofColor::orange);
 		font.drawString(text, -fontWidth / 2, 0);
 		ofPopMatrix();
@@ -255,7 +303,7 @@ void ofApp::draw() {
 		}
 
 		//Draw Landing Zone
-		ofSetColor(ofColor::green);
+		ofSetColor(landerBoxColor);
 		octree.drawBox(landingZoneBox);
 		ofPopMatrix();
 		theCam->end();
@@ -293,7 +341,7 @@ void ofApp::draw() {
 		ofPopMatrix();
 		ofPushMatrix();
 		ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2 + 160);
-		text = "Restart to Continue";
+		text = "Press Enter To Restart";
 		fontWidth = font.stringWidth(text);
 		font.drawString(text, -fontWidth / 2, 0);
 		ofPopMatrix();
@@ -451,18 +499,15 @@ void ofApp::draw() {
 		font.drawString(text, -fontWidth / 2, 0);
 		ofPopMatrix();
 
-
-		if (drawAltitude) {
-			//Draw Altitude
-			ofSetColor(ofColor::white);
-			ofPushMatrix();
-			ofTranslate(ofGetWidth() - 0.15 * ofGetWidth(), ofGetHeight() - 0.92 * ofGetHeight() + 160);
-			//text = "Altitude " + to_string(getAltitude());
-			text = "Altitude " + to_string(lander.rotation);
-			fontWidth = font.stringWidth(text);
-			font.drawString(text, -fontWidth / 2, 0);
-			ofPopMatrix();
-		}
+		//Draw Altitude
+		//Draw Altitude
+		ofSetColor(ofColor::white);
+		ofPushMatrix();
+		ofTranslate(ofGetWidth() - 0.15 * ofGetWidth(), ofGetHeight() - 0.92 * ofGetHeight() + 160);
+		text = "Altitude " + to_string(currentAltitude);
+		fontWidth = font.stringWidth(text);
+		font.drawString(text, -fontWidth / 2, 0);
+		ofPopMatrix();
 	}
 	
 }
@@ -499,7 +544,6 @@ void ofApp::keyPressed(int key) {
 	if (started && !gameover) {
 		switch (key) {
 		case 'a':
-			drawAltitude = !drawAltitude;
 			break;
 		case 'B':
 			break;
@@ -553,6 +597,7 @@ void ofApp::keyPressed(int key) {
 			lander.addForce(new ComputeUp(glm::vec3(0, 10, 0)));
 			emitter.sys->reset();
 			emitter.start();
+			thrustSound.play();
 			break;
 		case OF_KEY_SHIFT:
 			lander.addForce(new ComputeDown(glm::vec3(0, 10, 0)));
@@ -635,6 +680,8 @@ void ofApp::keyReleased(int key) {
 		break;
 	case OF_KEY_SHIFT:
 		break;
+	case ' ':
+		thrustSound.stop();
 	default:
 		break;
 
@@ -945,15 +992,19 @@ glm::vec3 ofApp::getMousePointOnPlane(glm::vec3 planePt, glm::vec3 planeNorm) {
 	else return glm::vec3(0, 0, 0);
 }
 
+/*
+* Get the altitude using a ray
+*/
 float ofApp::getAltitude() {
-	float bottom = lander.model.getSceneMin().y;
-	glm::vec3 position = glm::vec3(lander.position.x, bottom, lander.position.z);
-	Ray r = Ray(Vector3(position.x, position.y, position.z), Vector3(0, -1, 0));
+	Ray r = Ray(Vector3(lander.position.x, lander.position.y, lander.position.z), Vector3(0, -1, 0));
 	octree.intersect(r, octree.root, selectedNode);
 	glm::vec3 point = mars.getMesh(0).getVertex(selectedNode.points[0]);
-	return glm::distance(point, position);
+	return glm::length(point - lander.position);
 }
 
+/*
+* Check for collision using the octree
+*/
 bool ofApp::checkCollision() {
 	ofVec3f min = lander.model.getSceneMin() + lander.position;
 	ofVec3f max = lander.model.getSceneMax() + lander.position;
@@ -973,6 +1024,9 @@ bool ofApp::checkCollision() {
 	return false;
 }
 
+/*
+* Collision Resolution Function
+*/
 void ofApp::resolveCollision() {
 	ofVec3f min = lander.model.getSceneMin() + lander.position;
 	ofVec3f max = lander.model.getSceneMax() + lander.position;
@@ -991,8 +1045,8 @@ void ofApp::resolveCollision() {
 		}
 	}
 	float downVelocity = -lander.velocity.y;
-	//float difference = highestY - min.y;
-	lander.position = glm::vec3(lander.position.x, lander.position.y - lander.velocity.y, lander.position.z);
+	//Move lander Up a bit
+	lander.position = glm::vec3(lander.position.x, lander.position.y + 0.5, lander.position.z);
 	lander.removeForces();
 	glm::vec3 normal = mars.getMesh(0).getNormal(highestIndex);
 	glm::vec3 impulse = (1 + 0.85) * ((-lander.velocity).dot(normal) * normal);
@@ -1006,17 +1060,23 @@ void ofApp::resolveCollision() {
 			gameover = true;
 			emitter.setEmitterType(RadialEmitter);
 			emitter.sys->removeForces();
-			emitter.sys->addForce(new ImpulseRadialForce(500));
+			ImpulseRadialForce *impulse = new ImpulseRadialForce(500);
+			impulse->setHeight(1);
+			emitter.sys->addForce(impulse);
 			emitter.setVelocity(ofVec3f(0, 0, 0));
 			emitter.setRandomLife(true);
 			emitter.setLifespanRange(ofVec2f(1, 2));
 			emitter.setGroupSize(10000);
 			emitter.sys->reset();
 			emitter.start();
+			explodeSound.play();
 		}
 	}
 }
 
+/*
+* Reset the game
+*/
 void ofApp::reset() {
 	//Set the Lander
 	lander.position = glm::vec3(1, 100, 0);
@@ -1025,6 +1085,8 @@ void ofApp::reset() {
 	f->applyOnce = false;
 	lander.addForce(f);
 
+	//Set the adjustable camera
+	mainCam.setPosition(0, 100, 0);
 	//Set the emitter
 	emitter.sys->removeForces();
 	emitter.setPosition(lander.position);

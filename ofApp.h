@@ -36,8 +36,7 @@ class ofApp : public ofBaseApp{
 		void toggleSelectTerrain();
 		void setCameraTarget();
 		bool mouseIntersectPlane(ofVec3f planePoint, ofVec3f planeNorm, ofVec3f &point);
-		bool raySelectWithOctree(ofVec3f &pointRet);
-		float getAltitude();
+		bool raySelectWithOctree(ofVec3f& pointRet);
 		bool checkCollision();
 		void resolveCollision();
 		void loadVbo();
@@ -49,7 +48,7 @@ class ofApp : public ofBaseApp{
 		ofCamera* theCam;
 		ofxAssimpModelLoader mars;
 		Lander lander;
-		ofColor landerBoxColor = ofColor::green;
+		ofColor landerBoxColor = ofColor::blue;
 		ofLight light;
 		Box boundingBox, landerBounds,landingZoneBox;
 		Box testBox;
@@ -59,7 +58,6 @@ class ofApp : public ofBaseApp{
 		TreeNode selectedNode;
 		glm::vec3 mouseDownPos, mouseLastPos;
 		bool bInDrag = false;
-		float currentAltitude;
 
 
 		ofxIntSlider numLevels;
@@ -78,7 +76,6 @@ class ofApp : public ofBaseApp{
 		bool bDisplayLeafNodes = false;
 		bool bDisplayOctree = false;
 		bool bDisplayBBoxes = false;
-		bool drawAltitude = false;
 		
 		bool bLanderLoaded;
 		bool bTerrainSelected;
@@ -87,6 +84,9 @@ class ofApp : public ofBaseApp{
 		ofVec3f intersectPoint;
 
 		//Altitude Stuff
+		float currentAltitude;
+		float getAltitude();
+
 
 		//Prep Explosions
 		ParticleEmitter* explosions;
@@ -102,13 +102,13 @@ class ofApp : public ofBaseApp{
 
 		//Set Sounds
 		ofSoundPlayer backgroundSound;
-		ofSoundPlayer* thrustSound;
-		ofSoundPlayer* explodeSound;
+		ofSoundPlayer thrustSound;
+		ofSoundPlayer explodeSound;
 
 		vector<Box> bboxList;
 		vector<TreeNode> nodeList;
 
-
+		float last_check;
 		time_t time_start, time_finish;
 		glm::vec3 landingZone;
 
