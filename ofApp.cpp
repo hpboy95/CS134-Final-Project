@@ -30,7 +30,7 @@ void ofApp::setup(){
 	mainCam.setDistance(50);
 	mainCam.setNearClip(.1);
 	mainCam.setFov(65.5);   // approx equivalent to 28mm in 35mm format
-	mainCam.setPosition(mainCam.getPosition() + glm::vec3(0, 100, 0));
+	mainCam.setPosition(mainCam.getPosition() + glm::vec3(10, 100, 0));
 	ofSetVerticalSync(true);
 	ofEnableSmoothing();
 	ofEnableDepthTest();
@@ -271,7 +271,7 @@ void ofApp::draw() {
 
 		ofPushMatrix();
 		ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2 + 80);
-		text = "Landing Zone Marked in Blue";
+		text = "Landing Zone Marked in Green";
 		fontWidth = font.stringWidth(text);
 		ofSetColor(ofColor::orange);
 		font.drawString(text, -fontWidth / 2, 0);
@@ -1154,7 +1154,7 @@ void ofApp::reset() {
 	lander.addForce(f);
 
 	//Set the adjustable camera
-	mainCam.setPosition(0, 100, 0);
+	mainCam.setPosition(10, 100, 0);
 	//Set the emitter
 	emitter.sys->removeForces();
 	emitter.setPosition(lander.position);
